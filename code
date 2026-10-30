@@ -1,0 +1,192 @@
+
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+
+# Movie Dataset
+data = {
+    "title": [
+        "Inception",
+        "Interstellar",
+        "The Dark Knight",
+        "Avengers Endgame",
+        "Iron Man",
+        "The Matrix",
+        "Titanic",
+        "The Notebook",
+        "Jurassic Park",
+        "Avatar",
+        "Avengers Infinity War",
+        "Captain America",
+        "Spider Man",
+        "Doctor Strange",
+        "Joker",
+        "Frozen",
+        "Toy Story",
+        "Finding Nemo",
+        "The Lion King",
+        "The Conjuring"
+    ],
+
+    "genre": [
+        "Action Sci-Fi Thriller",
+        "Sci-Fi Drama Adventure",
+        "Action Crime Drama",
+        "Action Adventure Sci-Fi",
+        "Action Sci-Fi",
+        "Action Sci-Fi Thriller",
+        "Romance Drama",
+        "Romance Drama",
+        "Adventure Sci-Fi Thriller",
+        "Action Adventure Sci-Fi",
+        "Action Adventure Sci-Fi",
+        "Action Adventure",
+        "Action Adventure Sci-Fi",
+        "Action Fantasy Adventure",
+        "Crime Drama Thriller",
+        "Animation Adventure Family",
+        "Animation Comedy Family",
+        "Animation Adventure Family",
+        "Animation Adventure Drama",
+        "Horror Mystery Thriller"
+    ],
+
+    "overview": [
+        "A thief enters people's dreams to steal secrets",
+        "Explorers travel through space to save humanity",
+        "Batman fights a dangerous criminal in Gotham",
+        "Superheroes unite to save the universe",
+        "An engineer builds a powerful armored suit",
+        "A hacker discovers a simulated reality",
+        "A love story aboard a doomed ship",
+        "Two people experience a lifelong love story",
+        "Scientists create a park filled with dinosaurs",
+        "A marine joins an alien world to protect its people",
+        "Heroes fight against a powerful villain",
+        "A soldier becomes a superhero and fights evil",
+        "A young hero protects his city from criminals",
+        "A doctor learns powerful mystical abilities",
+        "A troubled man transforms into a criminal",
+        "Two sisters discover the power of love",
+        "Toys come alive when humans are away",
+        "A father searches for his missing son",
+        "A young lion discovers his destiny",
+        "A family experiences terrifying supernatural events"
+    ]
+}
+
+
+# Create DataFrame
+movies = pd.DataFrame(data)
+
+
+# Combine movie features
+movies["features"] = (
+    movies["genre"] + " " + movies["overview"]
+)
+
+
+# Convert text into numerical values
+tfidf = TfidfVectorizer(stop_words="english")
+
+tfidf_matrix = tfidf.fit_transform(movies["features"])
+
+
+# Calculate cosine similarity
+similarity = cosine_similarity(tfidf_matrix)
+
+
+# Recommendation Function
+def recommend_movies(movie_name, number=5):
+
+    movie_name = movie_name.strip().lower()
+
+    matching_movies = movies[
+        movies["title"].str.lower() == movie_name
+    ]
+
+    if matching_movies.empty:
+        print("\nMovie not found in database!")
+        return
+
+    movie_index = matching_movies.index[0]
+
+    similarity_scores = list(
+        enumerate(similarity[movie_index])
+    )
+
+    similarity_scores = sorted(
+        similarity_scores,
+        key=lambda x: x[1],
+        reverse=True
+    )
+
+    print("\n" + "=" * 55)
+    print("       RECOMMENDED MOVIES")
+    print("=" * 55)
+
+    count = 0
+
+    for index, score in similarity_scores:
+
+        if index == movie_index:
+            continue
+
+        print(f"\nMovie: {movies.iloc[index]['title']}")
+        print(f"Genre: {movies.iloc[index]['genre']}")
+        print(f"Similarity: {score * 100:.2f}%")
+
+        count += 1
+
+        if count == number:
+            break
+
+    print("\n" + "=" * 55)
+
+
+# Main Program
+def main():
+
+    print("\n" + "=" * 55)
+    print("        MOVIE RECOMMENDATION SYSTEM")
+    print("=" * 55)
+
+    while True:
+
+        print("\nAvailable Movies:\n")
+
+        for movie in movies["title"]:
+            print("-", movie)
+
+        print("\nEnter 'exit' to close the program.")
+
+        movie_name = input(
+            "\nEnter your favorite movie: "
+        )
+
+        if movie_name.strip().lower() == "exit":
+            print("\nThank you for using Movie Recommendation System!")
+            break
+
+        try:
+            number = int(
+                input("How many recommendations do you want? ")
+            )
+
+            if number < 1:
+                print("Please enter a number greater than 0.")
+                continue
+
+            if number >= len(movies):
+                number = len(movies) - 1
+
+        except ValueError:
+            print("Please enter a valid number.")
+            continue
+
+        recommend_movies(movie_name, number)
+
+
+if __name__ == "__main__":
+    main()
